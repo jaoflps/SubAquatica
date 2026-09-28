@@ -6,11 +6,11 @@ from .ui import bar, panel, text
 
 
 LEVELS = [
-    ("ZONA FOTICA", "200 m", (20, 93, 142), 2, ("angler",), 72, 130, 16),
-    ("ZONA DISFOTICA", "1.000 m", (12, 64, 111), 3, ("angler", "jelly"), 92, 165, 21),
-    ("ZONA AFOTICA", "4.000 m", (8, 38, 75), 4, ("shark", "jelly", "eel"), 115, 205, 27),
-    ("ZONA HADAL", "6.000 m", (6, 23, 52), 5, ("shark", "eel", "leviathan"), 140, 250, 34),
-    ("ZONA ABISSAL", "10.000 m", (3, 12, 31), 6, ("angler", "eel", "leviathan"), 165, 330, 43),
+    ("ZONA FOTICA", "200 m", (20, 93, 142), 2, ("angler",), 48, 95, 8),
+    ("ZONA DISFOTICA", "1.000 m", (12, 64, 111), 2, ("angler", "jelly"), 60, 115, 11),
+    ("ZONA AFOTICA", "4.000 m", (8, 38, 75), 3, ("shark", "jelly", "eel"), 74, 140, 14),
+    ("ZONA HADAL", "6.000 m", (6, 23, 52), 3, ("shark", "eel", "leviathan"), 88, 165, 17),
+    ("ZONA ABISSAL", "10.000 m", (3, 12, 31), 4, ("angler", "eel", "leviathan"), 105, 195, 22),
 ]
 
 
@@ -28,9 +28,9 @@ class Game:
     def reset_run(self):
         self.level = 0
         self.credits = 0
-        self.speed = 165
-        self.lamp = 105
-        self.tank = 75
+        self.speed = 185
+        self.lamp = 135
+        self.tank = 120
         self.start_level()
 
     def start_level(self):
@@ -65,19 +65,19 @@ class Game:
             if event.key == pygame.K_ESCAPE:
                 self.state = "menu"
         elif self.state == "upgrade":
-            costs = {pygame.K_1: ("tanque", 35), pygame.K_2: ("propulsor", 35), pygame.K_3: ("lanterna", 35)}
+            costs = {pygame.K_1: ("tanque", 25), pygame.K_2: ("propulsor", 25), pygame.K_3: ("lanterna", 25)}
             if event.key in costs:
                 item, cost = costs[event.key]
                 if self.credits >= cost:
                     self.credits -= cost
-                    if item == "tanque": self.tank += 25
-                    if item == "propulsor": self.speed += 30
-                    if item == "lanterna": self.lamp += 32
+                    if item == "tanque": self.tank += 35
+                    if item == "propulsor": self.speed += 35
+                    if item == "lanterna": self.lamp += 40
                     self.message, self.message_time = "MELHORIA INSTALADA", 2
                 else:
                     self.message, self.message_time = "CREDITOS INSUFICIENTES", 2
-            if event.key in (pygame.K_RETURN, pygame.K_SPACE) and self.level == 4 and self.lamp < 169:
-                self.message, self.message_time = "A ZONA ABISSAL EXIGE LANTERNA NIVEL 2", 3
+            if event.key in (pygame.K_RETURN, pygame.K_SPACE) and self.level == 4 and self.lamp < 160:
+                self.message, self.message_time = "A ZONA ABISSAL EXIGE UMA MELHORIA DE LANTERNA", 3
                 return
             if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                 self.state = "play"
@@ -89,7 +89,7 @@ class Game:
         if self.state != "play":
             return
         self.message_time -= dt
-        self.oxygen -= dt * (1 + self.level * .18)
+        self.oxygen -= dt * (.55 + self.level * .08)
         keys = pygame.key.get_pressed()
         self.diver.update(keys, dt, self.bounds)
         for item in self.items: item.update(dt)
@@ -97,8 +97,8 @@ class Game:
         for item in self.items[:]:
             if self.diver.rect.colliderect(item.rect.inflate(10, 10)):
                 self.items.remove(item)
-                self.credits += 20
-                self.message, self.message_time = "+20 CREDITOS", 1.2
+                self.credits += 30
+                self.message, self.message_time = "+30 CREDITOS", 1.2
         for creature in self.creatures:
             if self.diver.rect.colliderect(creature.rect.inflate(-8, -8)):
                 self.oxygen -= creature.damage
@@ -153,8 +153,8 @@ class Game:
         # darkness with a transparent hole around the lamp
         dark = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
         final_dive = self.level == 4
-        dark.fill((0, 0, 5, 248 if final_dive else 80 + self.level * 28))
-        pygame.draw.circle(dark, (0, 0, 0, 0), self.diver.rect.center, self.lamp if not final_dive else max(48, self.lamp - 42))
+        dark.fill((0, 0, 5, 225 if final_dive else 70 + self.level * 23))
+        pygame.draw.circle(dark, (0, 0, 0, 0), self.diver.rect.center, self.lamp if not final_dive else max(72, self.lamp - 20))
         self.screen.blit(dark, (0, 0))
         panel(self.screen, pygame.Rect(12, 8, 300, 30))
         text(self.screen, self.font, f"{LEVELS[self.level][0]}  |  {LEVELS[self.level][1]}", (20, 16))
@@ -179,7 +179,7 @@ class Game:
     def draw(self):
         if self.state == "play": self.draw_play()
         elif self.state == "menu": self.draw_center("SUBAQUATICA", ["Explore as fossas, encontre amostras e retorne antes do oxigenio acabar.", "Cinco zonas oceanicas. Criaturas territoriais. Escuridao total."], "[ENTER] MERGULHAR     [H] COMO JOGAR")
-        elif self.state == "help": self.draw_center("CONTROLES", ["WASD ou SETAS - mover o mergulhador", "Colete todas as amostras e volte ao submarino no alto da tela.", "Criaturas detectam e perseguem voce. Cada zona aumenta a ameaca.", "A Zona Abissal exige duas melhorias de lanterna."], "PRESSIONE QUALQUER TECLA PARA VOLTAR")
-        elif self.state == "upgrade": self.draw_center("ESTACAO DE MELHORIAS", [f"CREDITOS DISPONIVEIS: {self.credits}", "[1] TANQUE +25 O2 - 35 C", "[2] PROPULSOR +30 VELOCIDADE - 35 C", "[3] LANTERNA +32 ALCANCE - 35 C"], "[ENTER] DESCER PARA A PROXIMA ZONA")
+        elif self.state == "help": self.draw_center("CONTROLES", ["WASD ou SETAS - mover o mergulhador", "Colete todas as amostras e volte ao submarino no alto da tela.", "Criaturas detectam e perseguem voce, mas voce e mais rapido.", "A Zona Abissal exige uma melhoria de lanterna."], "PRESSIONE QUALQUER TECLA PARA VOLTAR")
+        elif self.state == "upgrade": self.draw_center("ESTACAO DE MELHORIAS", [f"CREDITOS DISPONIVEIS: {self.credits}", "[1] TANQUE +35 O2 - 25 C", "[2] PROPULSOR +35 VELOCIDADE - 25 C", "[3] LANTERNA +40 ALCANCE - 25 C"], "[ENTER] DESCER PARA A PROXIMA ZONA")
         elif self.state == "lost": self.draw_center("OXIGENIO ESGOTADO", ["A fossa venceu esta expedicao.", f"ZONAS ALCANCADAS: {self.best}/5"], "[ENTER] VOLTAR AO MENU")
         elif self.state == "win": self.draw_center("EXPEDICAO CONCLUIDA", ["Voce trouxe amostras das cinco zonas oceanicas.", "A Zona Abissal agora guarda seus segredos no laboratorio."], "[ENTER] VOLTAR AO MENU")
